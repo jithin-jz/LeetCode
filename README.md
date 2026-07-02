@@ -8,16 +8,6 @@ A collection of LeetCode problems and solutions, organized by topic and synced a
 
 <br>
 
-<table align="center">
-  <tr>
-    <td align="center" width="160"><sub>PROBLEMS SOLVED</sub><br><strong style="font-size:20px">2</strong></td>
-    <td align="center" width="160"><sub>TOPICS COVERED</sub><br><strong style="font-size:20px">5</strong></td>
-    <td align="center" width="160"><sub>STATUS</sub><br><strong style="font-size:20px">Active</strong></td>
-  </tr>
-</table>
-
-<br>
-
 ---
 
 <!---LeetCode Topics Start-->

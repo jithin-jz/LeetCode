@@ -6,8 +6,6 @@ A collection of LeetCode problems and solutions, organized by topic and synced a
 
 </div>
 
-<br>
-
 ---
 
 <!---LeetCode Topics Start-->

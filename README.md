@@ -47,4 +47,8 @@ A collection of LeetCode problems and solutions, organized by topic and synced a
 |  |
 | ------- |
 | [0389-find-the-difference](https://github.com/jithin-jz/LeetCode/tree/master/0389-find-the-difference) |
+## Database
+|  |
+| ------- |
+| [0175-combine-two-tables](https://github.com/jithin-jz/LeetCode/tree/master/0175-combine-two-tables) |
 <!---LeetCode Topics End-->

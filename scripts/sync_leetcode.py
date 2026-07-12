@@ -6,7 +6,6 @@ and writes them to the root directory organized by problem number and slug.
 """
 
 import os
-import json
 import time
 import requests
 
@@ -263,16 +262,6 @@ def main():
             print(f"  Saved (new/updated): {filepath}")
         else:
             print(f"  Unchanged: {filepath}")
-
-    # Update stats only when something actually changed (avoids empty daily commits)
-    if changed_count > 0:
-        stats = {
-            "total_synced": synced,
-            "last_sync": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
-            "username": USERNAME,
-        }
-        with open("stats.json", "w") as f:
-            json.dump(stats, f, indent=2)
 
     print(f"\n{'=' * 50}")
     print(f"Sync complete! {changed_count} new/updated, {synced} processed.")

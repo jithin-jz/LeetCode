@@ -18,7 +18,7 @@
 
 ## ✨ Overview
 
-This repository automatically collects my accepted LeetCode submissions and organizes them into a clean, browsable structure. There's no manual copy-pasting — a scheduled GitHub Action fetches my latest solutions straight from LeetCode's API and commits them for me.
+This repository automatically collects my accepted LeetCode submissions and organizes them into a clean, browsable structure. There's no manual copy-pasting - a scheduled GitHub Action fetches my latest solutions straight from LeetCode's API and commits them for me.
 
 > Every solved problem gets its own folder containing the solution file and a README with the problem's difficulty, topics, and a direct link.
 
@@ -36,10 +36,10 @@ flowchart LR
     F --> G[✅ Commit & Push<br/>new solutions]
 ```
 
-1. **Scheduled trigger** — a GitHub Action runs every day at midnight UTC (also triggerable manually).
-2. **Fetch** — a Python script queries LeetCode's GraphQL API for recently accepted submissions.
-3. **Organize** — each solution is written to its own numbered folder with a generated README.
-4. **Commit** — only new or changed solutions are committed, keeping the history clean.
+1. **Scheduled trigger** - a GitHub Action runs every day at midnight UTC (also triggerable manually).
+2. **Fetch** - a Python script queries LeetCode's GraphQL API for recently accepted submissions.
+3. **Organize** - each solution is written to its own numbered folder with a generated README.
+4. **Commit** - only new or changed solutions are committed, keeping the history clean.
 
 ---
 

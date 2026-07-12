@@ -161,7 +161,10 @@ def fetch_submission_code(session, submission_id):
 
 
 def write_solution(problem_details, lang, code):
-    """Write solution file to the repository root."""
+    """Write solution file to the repository root.
+
+    Returns True if a file was created or its content changed, False otherwise.
+    """
     frontend_id = problem_details.get("questionFrontendId", "0")
     title_slug = problem_details.get("titleSlug", "unknown")
     title = problem_details.get("title", "Unknown")
@@ -174,15 +177,24 @@ def write_solution(problem_details, lang, code):
 
     os.makedirs(folder_name, exist_ok=True)
 
-    # Write solution file: 0069-sqrtx/0069-sqrtx.py
+    changed = False
+
+    # Write solution file: 0069-sqrtx/0069-sqrtx.py (only if new or changed)
     ext = LANGUAGE_EXTENSIONS.get(lang, lang)
     filename = f"{folder_name}.{ext}"
     filepath = os.path.join(folder_name, filename)
 
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(code)
+    existing = None
+    if os.path.exists(filepath):
+        with open(filepath, "r", encoding="utf-8") as f:
+            existing = f.read()
 
-    # Write README for the problem
+    if existing != code:
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(code)
+        changed = True
+
+    # Write README for the problem (only if missing)
     readme_path = os.path.join(folder_name, "README.md")
     if not os.path.exists(readme_path):
         readme_content = f"""# {padded_id}. {title}
@@ -195,8 +207,9 @@ def write_solution(problem_details, lang, code):
 """
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(readme_content)
+        changed = True
 
-    return filepath
+    return filepath, changed
 
 
 def main():
@@ -218,6 +231,7 @@ def main():
 
     # Process each submission
     synced = 0
+    changed_count = 0
     for i, sub in enumerate(submissions):
         title_slug = sub.get("titleSlug", "")
         lang = sub.get("lang", "")
@@ -242,21 +256,26 @@ def main():
             print(f"  Could not fetch problem details, skipping.")
             continue
 
-        filepath = write_solution(problem_details, lang, code)
-        print(f"  Saved: {filepath}")
+        filepath, changed = write_solution(problem_details, lang, code)
         synced += 1
+        if changed:
+            changed_count += 1
+            print(f"  Saved (new/updated): {filepath}")
+        else:
+            print(f"  Unchanged: {filepath}")
 
-    # Update stats
-    stats = {
-        "total_synced": synced,
-        "last_sync": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
-        "username": USERNAME,
-    }
-    with open("stats.json", "w") as f:
-        json.dump(stats, f, indent=2)
+    # Update stats only when something actually changed (avoids empty daily commits)
+    if changed_count > 0:
+        stats = {
+            "total_synced": synced,
+            "last_sync": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+            "username": USERNAME,
+        }
+        with open("stats.json", "w") as f:
+            json.dump(stats, f, indent=2)
 
     print(f"\n{'=' * 50}")
-    print(f"Sync complete! {synced} solutions synced.")
+    print(f"Sync complete! {changed_count} new/updated, {synced} processed.")
     print(f"{'=' * 50}")
 
 

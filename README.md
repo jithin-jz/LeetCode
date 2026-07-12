@@ -2,17 +2,16 @@
 
 Auto-synced LeetCode solutions for [jithin-jz](https://leetcode.com/u/jithin-jz/)
 
-![Sync LeetCode Solutions](https://github.com/jithin-jz/leetcode-solutions/actions/workflows/sync.yml/badge.svg)
+![Sync LeetCode Solutions](https://github.com/jithin-jz/LeetCode/actions/workflows/sync.yml/badge.svg)
 
 ## Structure
 
 ```
-solutions/
 ├── 0001-two-sum/
-│   ├── solution.py
+│   ├── 0001-two-sum.py
 │   └── README.md
 ├── 0002-add-two-numbers/
-│   ├── solution.js
+│   ├── 0002-add-two-numbers.js
 │   └── README.md
 └── ...
 ```

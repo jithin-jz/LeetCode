@@ -213,7 +213,7 @@ def get_best_submissions(submissions):
 
 
 def write_solution(problem, submissions):
-    """Write solution files to the solutions directory."""
+    """Write solution files to the repository root (matching existing structure)."""
     frontend_id = problem.get("frontendQuestionId", "0")
     title_slug = problem.get("titleSlug", "unknown")
     title = problem.get("title", "Unknown")
@@ -223,17 +223,17 @@ def write_solution(problem, submissions):
     # Pad the problem number
     padded_id = str(frontend_id).zfill(4)
     folder_name = f"{padded_id}-{title_slug}"
-    folder_path = os.path.join("solutions", folder_name)
+    folder_path = folder_name  # Root level, no solutions/ prefix
 
     os.makedirs(folder_path, exist_ok=True)
 
     # Write each language submission
     for lang, sub in submissions.items():
         ext = LANGUAGE_EXTENSIONS.get(lang, lang)
-        filename = f"solution.{ext}"
+        # Match existing naming: 0069-sqrtx.py (folder name + extension)
+        filename = f"{folder_name}.{ext}"
         filepath = os.path.join(folder_path, filename)
 
-        # Add a header comment
         code = sub.get("code", "")
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(code)

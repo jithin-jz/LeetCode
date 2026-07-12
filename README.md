@@ -6,7 +6,6 @@
 
 <br>
 
-[![Sync Status](https://github.com/jithin-jz/LeetCode/actions/workflows/sync.yml/badge.svg)](https://github.com/jithin-jz/LeetCode/actions/workflows/sync.yml)
 [![LeetCode Profile](https://img.shields.io/badge/LeetCode-jithin--jz-FFA116?style=flat&logo=leetcode&logoColor=white)](https://leetcode.com/u/jithin-jz/)
 [![Auto Sync](https://img.shields.io/badge/Sync-Daily%20at%20Midnight%20UTC-4c1?style=flat&logo=githubactions&logoColor=white)](#-how-it-works)
 

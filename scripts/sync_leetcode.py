@@ -2,7 +2,7 @@
 Sync LeetCode accepted submissions to the repository.
 
 Fetches all accepted solutions for user 'jithin-jz' from LeetCode's GraphQL API
-and writes them to the solutions/ directory organized by problem number and slug.
+and writes them to the root directory organized by problem number and slug.
 """
 
 import os
@@ -37,8 +37,6 @@ LANGUAGE_EXTENSIONS = {
     "bash": "sh",
 }
 
-DIFFICULTY_MAP = {1: "Easy", 2: "Medium", 3: "Hard"}
-
 
 def get_session():
     """Create a requests session with LeetCode auth cookies."""
@@ -58,122 +56,59 @@ def get_session():
             "Content-Type": "application/json",
             "Referer": "https://leetcode.com",
             "x-csrftoken": csrf_token,
+            "User-Agent": "Mozilla/5.0",
         }
     )
     return session
 
 
-def fetch_solved_problems(session):
-    """Fetch list of all solved problems for the user."""
-    query = """
-    query userProblemsSolved($username: String!) {
-        allQuestionsCount {
-            difficulty
-            count
-        }
-        matchedUser(username: $username) {
-            submitStatsGlobal {
-                acSubmissionNum {
-                    difficulty
-                    count
-                }
-            }
-        }
-    }
-    """
-    # First get all accepted submission slugs
-    query_accepted = """
-    query userProfileUserQuestionProgressV2($userSlug: String!) {
-        userProfileUserQuestionProgressV2(userSlug: $userSlug) {
-            numAcceptedQuestions {
-                difficulty
-                count
-            }
-        }
-    }
-    """
-
-    # Fetch the full problem list with acceptance status
-    problems = []
+def fetch_all_submissions(session):
+    """Fetch all accepted submissions using the submissions API."""
+    submissions = {}
     offset = 0
-    limit = 50
+    has_next = True
 
-    while True:
-        query_problemset = """
-        query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $filters: QuestionListFilterInput) {
-            problemsetQuestionList: questionList(
-                categorySlug: $categorySlug
-                limit: $limit
-                skip: $skip
-                filters: $filters
-            ) {
-                total: totalNum
-                questions: data {
-                    frontendQuestionId: questionFrontendId
-                    title
-                    titleSlug
-                    difficulty
-                    status
-                    topicTags {
-                        name
-                    }
-                }
-            }
-        }
-        """
-
-        response = session.post(
-            LEETCODE_API_URL,
-            json={
-                "query": query_problemset,
-                "variables": {
-                    "categorySlug": "",
-                    "skip": offset,
-                    "limit": limit,
-                    "filters": {"status": "AC"},
-                },
-            },
-        )
+    while has_next:
+        url = f"https://leetcode.com/api/submissions/?offset={offset}&limit=20&lastkey="
+        response = session.get(url)
 
         if response.status_code != 200:
-            print(f"Error fetching problems: {response.status_code}")
+            print(f"Error fetching submissions: {response.status_code}")
+            print(f"Response: {response.text[:500]}")
             break
 
         data = response.json()
-        question_list = data.get("data", {}).get("problemsetQuestionList", {})
-        questions = question_list.get("questions", [])
-        total = question_list.get("total", 0)
+        submission_list = data.get("submissions_dump", [])
+        has_next = data.get("has_next", False)
 
-        if not questions:
-            break
+        for sub in submission_list:
+            if sub.get("status_display") == "Accepted":
+                slug = sub.get("title_slug", "")
+                lang = sub.get("lang", "")
+                key = f"{slug}_{lang}"
 
-        problems.extend(questions)
-        offset += limit
+                # Keep only the latest accepted submission per problem per language
+                if key not in submissions:
+                    submissions[key] = sub
 
-        if offset >= total:
-            break
+        offset += 20
+        print(f"  Fetched {offset} submissions so far... ({len(submissions)} accepted)")
+        time.sleep(2)  # Rate limiting
 
-        time.sleep(1)  # Rate limiting
-
-    return problems
+    return list(submissions.values())
 
 
-def fetch_submission(session, title_slug):
-    """Fetch the latest accepted submission for a problem."""
+def fetch_problem_details(session, title_slug):
+    """Fetch problem details (number, difficulty, topics)."""
     query = """
-    query submissionList($offset: Int!, $limit: Int!, $questionSlug: String!, $status: Int) {
-        questionSubmissionList(
-            offset: $offset
-            limit: $limit
-            questionSlug: $questionSlug
-            status: $status
-        ) {
-            submissions {
-                id
-                lang
-                code: submissionCode
-                timestamp
-                statusDisplay
+    query questionData($titleSlug: String!) {
+        question(titleSlug: $titleSlug) {
+            questionFrontendId
+            title
+            titleSlug
+            difficulty
+            topicTags {
+                name
             }
         }
     }
@@ -181,65 +116,69 @@ def fetch_submission(session, title_slug):
 
     response = session.post(
         LEETCODE_API_URL,
-        json={
-            "query": query,
-            "variables": {
-                "questionSlug": title_slug,
-                "offset": 0,
-                "limit": 20,
-                "status": 10,  # Accepted
-            },
-        },
+        json={"query": query, "variables": {"titleSlug": title_slug}},
     )
 
     if response.status_code != 200:
-        return []
+        return None
 
     data = response.json()
-    submissions = (
-        data.get("data", {}).get("questionSubmissionList", {}).get("submissions", [])
+    return data.get("data", {}).get("question")
+
+
+def fetch_submission_code(session, submission_id):
+    """Fetch the actual code of a submission."""
+    query = """
+    query submissionDetails($submissionId: Int!) {
+        submissionDetails(submissionId: $submissionId) {
+            code
+            lang {
+                name
+                verboseName
+            }
+        }
+    }
+    """
+
+    response = session.post(
+        LEETCODE_API_URL,
+        json={"query": query, "variables": {"submissionId": int(submission_id)}},
     )
-    return submissions
+
+    if response.status_code != 200:
+        return None
+
+    data = response.json()
+    details = data.get("data", {}).get("submissionDetails")
+    if details:
+        return details.get("code")
+    return None
 
 
-def get_best_submissions(submissions):
-    """Get the latest submission per language."""
-    best = {}
-    for sub in submissions:
-        lang = sub.get("lang", "")
-        if lang not in best:
-            best[lang] = sub
-    return best
-
-
-def write_solution(problem, submissions):
-    """Write solution files to the repository root (matching existing structure)."""
-    frontend_id = problem.get("frontendQuestionId", "0")
-    title_slug = problem.get("titleSlug", "unknown")
-    title = problem.get("title", "Unknown")
-    difficulty = problem.get("difficulty", "Unknown")
-    topics = [tag["name"] for tag in problem.get("topicTags", [])]
+def write_solution(problem_details, lang, code):
+    """Write solution file to the repository root."""
+    frontend_id = problem_details.get("questionFrontendId", "0")
+    title_slug = problem_details.get("titleSlug", "unknown")
+    title = problem_details.get("title", "Unknown")
+    difficulty = problem_details.get("difficulty", "Unknown")
+    topics = [tag["name"] for tag in problem_details.get("topicTags", [])]
 
     # Pad the problem number
     padded_id = str(frontend_id).zfill(4)
     folder_name = f"{padded_id}-{title_slug}"
-    folder_path = folder_name  # Root level, no solutions/ prefix
 
-    os.makedirs(folder_path, exist_ok=True)
+    os.makedirs(folder_name, exist_ok=True)
 
-    # Write each language submission
-    for lang, sub in submissions.items():
-        ext = LANGUAGE_EXTENSIONS.get(lang, lang)
-        # Match existing naming: 0069-sqrtx.py (folder name + extension)
-        filename = f"{folder_name}.{ext}"
-        filepath = os.path.join(folder_path, filename)
+    # Write solution file: 0069-sqrtx/0069-sqrtx.py
+    ext = LANGUAGE_EXTENSIONS.get(lang, lang)
+    filename = f"{folder_name}.{ext}"
+    filepath = os.path.join(folder_name, filename)
 
-        code = sub.get("code", "")
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(code)
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(code)
 
     # Write README for the problem
-    readme_path = os.path.join(folder_path, "README.md")
+    readme_path = os.path.join(folder_name, "README.md")
     if not os.path.exists(readme_path):
         readme_content = f"""# {padded_id}. {title}
 
@@ -252,39 +191,80 @@ def write_solution(problem, submissions):
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(readme_content)
 
+    return filepath
+
 
 def main():
-    print("Starting LeetCode sync...")
+    print("=" * 50)
+    print("LeetCode Sync - Starting")
+    print("=" * 50)
+
     session = get_session()
 
-    print("Fetching solved problems...")
-    problems = fetch_solved_problems(session)
-    print(f"Found {len(problems)} solved problems.")
+    # Test authentication
+    print("\nTesting authentication...")
+    test_response = session.get("https://leetcode.com/api/submissions/?offset=0&limit=1")
+    if test_response.status_code != 200:
+        print(f"Authentication failed! Status: {test_response.status_code}")
+        print("Please check your LEETCODE_SESSION and LEETCODE_CSRF_TOKEN secrets.")
+        return
+    print("Authentication successful!")
 
-    if not problems:
-        print("No solved problems found. Check your credentials.")
+    # Fetch all accepted submissions
+    print("\nFetching all accepted submissions...")
+    submissions = fetch_all_submissions(session)
+    print(f"\nFound {len(submissions)} unique accepted submissions.")
+
+    if not submissions:
+        print("No accepted submissions found. Check your credentials.")
         return
 
+    # Process each submission
     synced = 0
-    for i, problem in enumerate(problems):
-        title_slug = problem.get("titleSlug", "")
-        frontend_id = problem.get("frontendQuestionId", "0")
-        title = problem.get("title", "Unknown")
+    for i, sub in enumerate(submissions):
+        title_slug = sub.get("title_slug", "")
+        lang = sub.get("lang", "")
+        submission_id = sub.get("id")
+        title = sub.get("title", "Unknown")
 
-        print(f"[{i+1}/{len(problems)}] Processing: {frontend_id}. {title}")
+        print(f"\n[{i+1}/{len(submissions)}] Processing: {title} ({lang})")
 
-        submissions = fetch_submission(session, title_slug)
-        if not submissions:
-            print(f"  No accepted submissions found, skipping.")
+        # Check if code is already in the submission data
+        code = sub.get("code")
+
+        # If not, fetch it separately
+        if not code and submission_id:
+            code = fetch_submission_code(session, submission_id)
+            time.sleep(1)
+
+        if not code:
+            print(f"  Could not fetch code, skipping.")
             continue
 
-        best = get_best_submissions(submissions)
-        write_solution(problem, best)
+        # Fetch problem details for folder naming
+        problem_details = fetch_problem_details(session, title_slug)
+        time.sleep(1)
+
+        if not problem_details:
+            print(f"  Could not fetch problem details, skipping.")
+            continue
+
+        filepath = write_solution(problem_details, lang, code)
+        print(f"  Saved: {filepath}")
         synced += 1
 
-        time.sleep(1.5)  # Rate limiting to avoid being blocked
+    # Update stats
+    stats = {
+        "total_synced": synced,
+        "last_sync": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+        "username": USERNAME,
+    }
+    with open("stats.json", "w") as f:
+        json.dump(stats, f, indent=2)
 
-    print(f"\nSync complete! {synced} problems synced.")
+    print(f"\n{'=' * 50}")
+    print(f"Sync complete! {synced} solutions synced.")
+    print(f"{'=' * 50}")
 
 
 if __name__ == "__main__":

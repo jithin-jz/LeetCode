@@ -26,12 +26,14 @@ This repository automatically collects my accepted LeetCode submissions and orga
 
 ## 🚀 How It Works
 
-```
-⏰ Daily Cron        🤖 GitHub         🐍 sync_          🌐 LeetCode
-  Midnight UTC  ──▶    Action    ──▶   leetcode.py  ──▶  GraphQL API
-                                                              │
-   ✅ Commit & Push  ◀──  📂 Write to    ◀──  📥 Fetch accepted
-      new solutions        problem folders      submissions + code
+```mermaid
+flowchart LR
+    A([⏰ Daily Cron<br/>Midnight UTC]) --> B[🤖 GitHub Action]
+    B --> C[🐍 sync_leetcode.py]
+    C --> D{{🌐 LeetCode<br/>GraphQL API}}
+    D --> E[📥 Fetch accepted<br/>submissions + code]
+    E --> F[📂 Write to<br/>problem folders]
+    F --> G[✅ Commit & Push<br/>new solutions]
 ```
 
 1. **Scheduled trigger** — a GitHub Action runs every day at midnight UTC (also triggerable manually).

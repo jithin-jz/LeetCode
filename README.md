@@ -1,37 +1,132 @@
-# LeetCode Solutions
+<div align="center">
 
-Auto-synced LeetCode solutions for [jithin-jz](https://leetcode.com/u/jithin-jz/)
+# 🧩 LeetCode Solutions
 
-![Sync LeetCode Solutions](https://github.com/jithin-jz/LeetCode/actions/workflows/sync.yml/badge.svg)
+### My auto-synced journey through LeetCode, one problem at a time.
 
-## Structure
+<br>
+
+[![Sync Status](https://github.com/jithin-jz/LeetCode/actions/workflows/sync.yml/badge.svg)](https://github.com/jithin-jz/LeetCode/actions/workflows/sync.yml)
+[![LeetCode Profile](https://img.shields.io/badge/LeetCode-jithin--jz-FFA116?style=flat&logo=leetcode&logoColor=white)](https://leetcode.com/u/jithin-jz/)
+[![Auto Sync](https://img.shields.io/badge/Sync-Daily%20at%20Midnight%20UTC-4c1?style=flat&logo=githubactions&logoColor=white)](#-how-it-works)
+
+<br>
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![MySQL](https://img.shields.io/badge/SQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+
+</div>
+
+---
+
+## ✨ Overview
+
+This repository automatically collects my accepted LeetCode submissions and organizes them into a clean, browsable structure. There's no manual copy-pasting — a scheduled GitHub Action fetches my latest solutions straight from LeetCode's API and commits them for me.
+
+> Every solved problem gets its own folder containing the solution file and a README with the problem's difficulty, topics, and a direct link.
+
+---
+
+## 🚀 How It Works
+
+```mermaid
+flowchart LR
+    A([⏰ Daily Cron<br/>Midnight UTC]) --> B[🤖 GitHub Action]
+    B --> C[🐍 sync_leetcode.py]
+    C --> D{{🌐 LeetCode<br/>GraphQL API}}
+    D --> E[📥 Fetch accepted<br/>submissions + code]
+    E --> F[📂 Write to<br/>problem folders]
+    F --> G[✅ Commit & Push<br/>new solutions]
+```
+
+1. **Scheduled trigger** — a GitHub Action runs every day at midnight UTC (also triggerable manually).
+2. **Fetch** — a Python script queries LeetCode's GraphQL API for recently accepted submissions.
+3. **Organize** — each solution is written to its own numbered folder with a generated README.
+4. **Commit** — only new or changed solutions are committed, keeping the history clean.
+
+---
+
+## 📁 Repository Structure
 
 ```
+LeetCode/
+├── .github/workflows/
+│   └── sync.yml                 # ⚙️  Daily sync workflow
+├── scripts/
+│   └── sync_leetcode.py         # 🐍 The sync engine
+├── requirements.txt             # 📦 Python dependencies
+│
 ├── 0001-two-sum/
-│   ├── 0001-two-sum.py
-│   └── README.md
+│   ├── 0001-two-sum.py          # 💡 Solution
+│   └── README.md                # 📄 Problem details
 ├── 0002-add-two-numbers/
-│   ├── 0002-add-two-numbers.js
-│   └── README.md
+│   └── ...
 └── ...
 ```
 
-## Setup
+---
 
-This repo uses a GitHub Action that runs daily at midnight to fetch accepted submissions from LeetCode and commit them automatically.
+## 🛠️ Tech Stack
 
-### Required Secrets
+| Component        | Tool                                   |
+| :--------------- | :------------------------------------- |
+| **Automation**   | GitHub Actions (scheduled cron)        |
+| **Language**     | Python 3.11                            |
+| **Data Source**  | LeetCode GraphQL API                   |
+| **Solutions in** | Python · JavaScript · SQL · PostgreSQL |
 
-Add these in your repo → Settings → Secrets and variables → Actions:
+---
 
-- `LEETCODE_SESSION` — Your LeetCode session cookie
-- `LEETCODE_CSRF_TOKEN` — Your LeetCode CSRF token
+## ⚙️ Setup
 
-### How to get your LeetCode session cookie
+Want to fork this and sync your own solutions? Here's how.
+
+<details>
+<summary><b>1. Add your LeetCode credentials as repository secrets</b></summary>
+
+<br>
+
+Go to **Settings → Secrets and variables → Actions** and add:
+
+| Secret Name           | Where to find it                                   |
+| :-------------------- | :------------------------------------------------- |
+| `LEETCODE_SESSION`    | Browser cookie `LEETCODE_SESSION` on leetcode.com  |
+| `LEETCODE_CSRF_TOKEN` | Browser cookie `csrftoken` on leetcode.com         |
+
+</details>
+
+<details>
+<summary><b>2. How to grab your cookies</b></summary>
+
+<br>
 
 1. Log in to [leetcode.com](https://leetcode.com)
-2. Open browser DevTools (F12) → Application → Cookies → `https://leetcode.com`
-3. Copy the value of `LEETCODE_SESSION`
-4. Copy the value of `csrftoken`
+2. Open DevTools (`F12`) → **Application** → **Cookies** → `https://leetcode.com`
+3. Copy `LEETCODE_SESSION` and `csrftoken`
+4. Paste them into the matching repository secrets
 
-> ⚠️ Session cookies expire periodically. You'll need to update the secret when sync stops working.
+</details>
+
+<details>
+<summary><b>3. Run it</b></summary>
+
+<br>
+
+Head to the **Actions** tab → **Sync LeetCode Solutions** → **Run workflow**.
+After the first run, it syncs automatically every day. 🎉
+
+</details>
+
+> ⚠️ **Heads up:** LeetCode session cookies expire every couple of weeks. When sync stops working, just refresh the `LEETCODE_SESSION` secret with a fresh cookie value.
+
+---
+
+<div align="center">
+
+### 💻 Solving problems, one commit at a time.
+
+**[Visit my LeetCode Profile →](https://leetcode.com/u/jithin-jz/)**
+
+</div>

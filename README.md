@@ -67,17 +67,6 @@ LeetCode/
 
 ---
 
-## 🛠️ Tech Stack
-
-| Component        | Tool                                   |
-| :--------------- | :------------------------------------- |
-| **Automation**   | GitHub Actions (scheduled cron)        |
-| **Language**     | Python 3.11                            |
-| **Data Source**  | LeetCode GraphQL API                   |
-| **Solutions in** | Python · JavaScript · SQL · PostgreSQL |
-
----
-
 ## ⚙️ Setup
 
 Want to fork this and sync your own solutions? Here's how.

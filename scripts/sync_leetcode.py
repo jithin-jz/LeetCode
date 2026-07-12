@@ -62,40 +62,45 @@ def get_session():
     return session
 
 
-def fetch_all_submissions(session):
-    """Fetch all accepted submissions using the submissions API."""
-    submissions = {}
-    offset = 0
-    has_next = True
+def fetch_recent_ac_submissions(session, limit=20):
+    """Fetch recent accepted submissions via GraphQL (not IP-blocked like REST API)."""
+    query = """
+    query recentAcSubmissions($username: String!, $limit: Int!) {
+        recentAcSubmissionList(username: $username, limit: $limit) {
+            id
+            title
+            titleSlug
+            timestamp
+            lang
+        }
+    }
+    """
 
-    while has_next:
-        url = f"https://leetcode.com/api/submissions/?offset={offset}&limit=20&lastkey="
-        response = session.get(url)
+    response = session.post(
+        LEETCODE_API_URL,
+        json={"query": query, "variables": {"username": USERNAME, "limit": limit}},
+    )
 
-        if response.status_code != 200:
-            print(f"Error fetching submissions: {response.status_code}")
-            print(f"Response: {response.text[:500]}")
-            break
+    if response.status_code != 200:
+        print(f"Error fetching recent submissions: {response.status_code}")
+        print(f"Response: {response.text[:500]}")
+        return []
 
-        data = response.json()
-        submission_list = data.get("submissions_dump", [])
-        has_next = data.get("has_next", False)
+    data = response.json()
+    if "errors" in data:
+        print(f"GraphQL errors: {data['errors']}")
+        return []
 
-        for sub in submission_list:
-            if sub.get("status_display") == "Accepted":
-                slug = sub.get("title_slug", "")
-                lang = sub.get("lang", "")
-                key = f"{slug}_{lang}"
+    submissions = data.get("data", {}).get("recentAcSubmissionList", [])
 
-                # Keep only the latest accepted submission per problem per language
-                if key not in submissions:
-                    submissions[key] = sub
+    # Deduplicate: keep latest submission per (slug, lang)
+    seen = {}
+    for sub in submissions:
+        key = f"{sub.get('titleSlug')}_{sub.get('lang')}"
+        if key not in seen:
+            seen[key] = sub
 
-        offset += 20
-        print(f"  Fetched {offset} submissions so far... ({len(submissions)} accepted)")
-        time.sleep(2)  # Rate limiting
-
-    return list(submissions.values())
+    return list(seen.values())
 
 
 def fetch_problem_details(session, title_slug):
@@ -201,41 +206,29 @@ def main():
 
     session = get_session()
 
-    # Test authentication
-    print("\nTesting authentication...")
-    test_response = session.get("https://leetcode.com/api/submissions/?offset=0&limit=1")
-    if test_response.status_code != 200:
-        print(f"Authentication failed! Status: {test_response.status_code}")
-        print("Please check your LEETCODE_SESSION and LEETCODE_CSRF_TOKEN secrets.")
-        return
-    print("Authentication successful!")
-
-    # Fetch all accepted submissions
-    print("\nFetching all accepted submissions...")
-    submissions = fetch_all_submissions(session)
-    print(f"\nFound {len(submissions)} unique accepted submissions.")
+    # Fetch recent accepted submissions via GraphQL
+    print("\nFetching recent accepted submissions (via GraphQL)...")
+    submissions = fetch_recent_ac_submissions(session, limit=20)
+    print(f"Found {len(submissions)} recent accepted submissions.")
 
     if not submissions:
-        print("No accepted submissions found. Check your credentials.")
+        print("No accepted submissions found.")
+        print("If you just solved a problem, wait a minute and re-run.")
         return
 
     # Process each submission
     synced = 0
     for i, sub in enumerate(submissions):
-        title_slug = sub.get("title_slug", "")
+        title_slug = sub.get("titleSlug", "")
         lang = sub.get("lang", "")
         submission_id = sub.get("id")
         title = sub.get("title", "Unknown")
 
         print(f"\n[{i+1}/{len(submissions)}] Processing: {title} ({lang})")
 
-        # Check if code is already in the submission data
-        code = sub.get("code")
-
-        # If not, fetch it separately
-        if not code and submission_id:
-            code = fetch_submission_code(session, submission_id)
-            time.sleep(1)
+        # Fetch the code for this submission
+        code = fetch_submission_code(session, submission_id)
+        time.sleep(1)
 
         if not code:
             print(f"  Could not fetch code, skipping.")
